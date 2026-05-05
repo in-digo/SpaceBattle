@@ -15,21 +15,21 @@ public class RetryThenLogTests
 
         ExceptionHandler.Setup();
 
-        //Исключение от оригинальной команды - повторить
+        //Исключение от оригинальной команды - ретрай
         ExceptionHandler.Register(
             cmd.Object.GetType(),
             typeof(InvalidOperationException),
             (c, e) => new RetryCommand(c)
         );
 
-        //Исключение от RetryCommand - алогировать
+        //Исключение от RetryCommand - запись в лог
         ExceptionHandler.Register(
             typeof(RetryCommand),
             typeof(InvalidOperationException),
             (c, e) => new LogCommand(e, log.Object)
         );
 
-        //Исключение при вызове команды
+        //Исключение при вызове оригинальной команды
         try
         {
             cmd.Object.Execute();
