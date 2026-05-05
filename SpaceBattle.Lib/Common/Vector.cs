@@ -2,26 +2,37 @@ namespace SpaceBattle.Lib;
 
 public class Vector
 {
-    public int X { get; }
-    public int Y { get; }
+    public int[] Coords { get; }
 
-    public Vector(int x, int y)
+    public Vector(params int[] coords)
     {
-        X = x;
-        Y = y;
+        Coords = coords;
     }
 
     public static Vector operator +(Vector a, Vector b)
     {
-        return new Vector(a.X + b.X, a.Y + b.Y);
+        if (a.Coords.Length != b.Coords.Length)
+            throw new ArgumentException("Векторы должны быть одной размерности");
+
+        var result = new int[a.Coords.Length];
+        for (int i = 0; i < result.Length; i++)
+            result[i] = a.Coords[i] + b.Coords[i];
+
+        return new Vector(result);
     }
 
     public override bool Equals(object? obj)
     {
         if (obj is Vector other)
-            return X == other.X && Y == other.Y;
+            return Coords.SequenceEqual(other.Coords);
         return false;
     }
 
-    public override int GetHashCode() => HashCode.Combine(X, Y);
+    public override int GetHashCode()
+    {
+        var hash = new HashCode();
+        foreach (var c in Coords)
+            hash.Add(c);
+        return hash.ToHashCode();
+    }
 }
