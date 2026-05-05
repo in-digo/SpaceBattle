@@ -39,7 +39,7 @@ public class RetryThenLogTests
             queue.Enqueue(ExceptionHandler.Handle(cmd.Object, ex));
         }
 
-        //Retry
+        //Исключение при вызове ретрая
         var retryCmd = queue.Dequeue();
         try
         {
