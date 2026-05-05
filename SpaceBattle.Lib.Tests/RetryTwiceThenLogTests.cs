@@ -57,7 +57,7 @@ public class RetryTwiceThenLogTests
             queue.Enqueue(ExceptionHandler.Handle(retryCmd, ex));
         }
 
-        ///Исключение при вызове второго ретрая
+        //Исключение при вызове второго ретрая
         var retryTwoCmd = queue.Dequeue();
         try 
         { 
