@@ -11,6 +11,14 @@ public class MacroCommand : ICommand
 
     public void Execute()
     {
-        
+        try
+        {
+            foreach (var cmd in _commands)
+                cmd.Execute();
+        }
+        catch (Exception ex)
+        {
+            throw new CommandException("Ошибка MacroCommand", ex);
+        }
     }
 }
