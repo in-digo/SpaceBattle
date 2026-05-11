@@ -11,6 +11,7 @@ public class CheckFuelCommand : ICommand
 
     public void Execute()
     {
-        
+        if (_fuelable.FuelReserve < _fuelable.FuelConsumption)
+            throw new CommandException("Недостаточно топлива");
     }
 }
