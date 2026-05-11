@@ -1,6 +1,6 @@
 namespace SpaceBattle.Lib;
 
-public class MoveCommand
+public class MoveCommand : ICommand
 {
     private readonly IMovable _movable;
 
