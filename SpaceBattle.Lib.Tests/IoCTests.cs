@@ -55,4 +55,43 @@ public class IoCTests : IDisposable
 
         Assert.Equal(42, IoC.Resolve<int>("parent.val"));
     }
+
+    //Разные потоки работают в разных скоупах - каждый видит своё значение
+    [Fact]
+    public void DifferentThreads_HaveIndependentScopes()
+    {
+        int? resultThread1 = null;
+        int? resultThread2 = null;
+        var barrier = new Barrier(2);
+
+        var t1 = new Thread(() =>
+        {
+            new InitScopeBasedIoCCommand().Execute();
+            var scope = IoC.Resolve<object>("IoC.Scope.Create");
+            IoC.Resolve<ICommand>("Scopes.Current", scope).Execute();
+            IoC.Resolve<ICommand>("IoC.Register", "val", (Func<object[], object>)(_ => 1)).Execute();
+            barrier.SignalAndWait();
+            resultThread1 = IoC.Resolve<int>("val");
+            IoC.Resolve<ICommand>("Scopes.Current.Clear").Execute();
+        });
+
+        var t2 = new Thread(() =>
+        {
+            new InitScopeBasedIoCCommand().Execute();
+            var scope = IoC.Resolve<object>("IoC.Scope.Create");
+            IoC.Resolve<ICommand>("Scopes.Current", scope).Execute();
+            IoC.Resolve<ICommand>("IoC.Register", "val", (Func<object[], object>)(_ => 2)).Execute();
+            barrier.SignalAndWait();
+            resultThread2 = IoC.Resolve<int>("val");
+            IoC.Resolve<ICommand>("Scopes.Current.Clear").Execute();
+        });
+
+        t1.Start();
+        t2.Start();
+        t1.Join();
+        t2.Join();
+
+        Assert.Equal(1, resultThread1);
+        Assert.Equal(2, resultThread2);
+    }
 }
