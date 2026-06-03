@@ -1,3 +1,5 @@
+using Moq;
+
 namespace SpaceBattle.Lib.Tests;
 
 public interface ITestMovable
@@ -5,6 +7,11 @@ public interface ITestMovable
     Vector GetPosition();
     void SetPosition(Vector newValue);
     Vector GetVelocity();
+}
+
+public interface ITestFinishable
+{
+    void Finish();
 }
 
 public class AdapterGeneratorTests : IDisposable
@@ -52,5 +59,62 @@ public class AdapterGeneratorTests : IDisposable
         var adapter = IoC.Resolve<ITestMovable>("Adapter", typeof(ITestMovable), obj);
 
         Assert.Equal(expected, adapter.GetPosition());
+    }
+
+    // SetPosition резолвит ICommand по ключу position.set и вызывает Execute
+    [Fact]
+    public void SetPosition_ResolvesCommandAndExecutes()
+    {
+        var obj = new object();
+        var newValue = new Vector(3, 4);
+        object[]? capturedArgs = null;
+        var command = new Mock<ICommand>();
+
+        IoC.Resolve<ICommand>(
+            "IoC.Register",
+            $"{Iface}:position.set",
+            (Func<object[], object>)(args =>
+            {
+                capturedArgs = args;
+                return command.Object;
+            })
+        ).Execute();
+
+        var adapter = IoC.Resolve<ITestMovable>("Adapter", typeof(ITestMovable), obj);
+        adapter.SetPosition(newValue);
+
+        // Команда была выполнена
+        command.Verify(c => c.Execute(), Times.Once());
+        // В фабрику пришли целевой объект и новое значение
+        Assert.NotNull(capturedArgs);
+        Assert.Same(obj, capturedArgs![0]);
+        Assert.Equal(newValue, capturedArgs[1]);
+    }
+
+    // Finish (void без префикса Get/Set) резолвит ICommand по ключу :finish и выполняет
+    [Fact]
+    public void Finish_ResolvesCommandAndExecutes()
+    {
+        const string iface = "SpaceBattle.Lib.Tests.ITestFinishable";
+        var obj = new object();
+        object[]? capturedArgs = null;
+        var command = new Mock<ICommand>();
+
+        IoC.Resolve<ICommand>(
+            "IoC.Register",
+            $"{iface}:finish",
+            (Func<object[], object>)(args =>
+            {
+                capturedArgs = args;
+                return command.Object;
+            })
+        ).Execute();
+
+        var adapter = IoC.Resolve<ITestFinishable>("Adapter", typeof(ITestFinishable), obj);
+        adapter.Finish();
+
+        command.Verify(c => c.Execute(), Times.Once());
+        Assert.NotNull(capturedArgs);
+        Assert.Same(obj, capturedArgs![0]);
     }
 }
