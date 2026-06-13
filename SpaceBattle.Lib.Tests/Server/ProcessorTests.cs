@@ -26,4 +26,40 @@ public class ProcessorTests
         // Команда из очереди была выполнена один раз
         cmd.Verify(c => c.Execute(), Times.Once());
     }
+
+    // Исключение из команды не прерывает поток
+    [Fact]
+    public void Processor_ContinuesAfterCommandThrows()
+    {
+        ExceptionHandler.Setup();
+
+        var context = new Dictionary<string, object>();
+        new InitProcessorContextCommand(context).Execute();
+
+        var queue = (BlockingCollection<ICommand>)context["queue"];
+
+        var throwing = new Mock<ICommand>();
+        throwing.Setup(c => c.Execute()).Throws(new Exception());
+
+        // Cтратегия гасит исключение, цикл продолжает работу
+        ExceptionHandler.Register(
+            throwing.Object.GetType(),
+            typeof(Exception),
+            (cmd, ex) => new ActionCommand(() => { })
+        );
+
+        var after = new Mock<ICommand>();
+
+        queue.Add(throwing.Object);
+        queue.Add(after.Object);
+        queue.Add(new ActionCommand(() => context["canContinue"] = false));
+
+        var processor = new Processor(new Processable(context));
+
+        Assert.True(processor.Wait(5000));
+        // Команда, выбросившая исключение, была вызвана
+        throwing.Verify(c => c.Execute(), Times.Once());
+        // Команда после неё всё равно выполнилась
+        after.Verify(c => c.Execute(), Times.Once());
+    }
 }
