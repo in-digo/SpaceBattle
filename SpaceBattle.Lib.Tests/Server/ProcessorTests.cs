@@ -62,4 +62,27 @@ public class ProcessorTests
         // Команда после неё всё равно выполнилась
         after.Verify(c => c.Execute(), Times.Once());
     }
+
+    // После команды Старт поток запущен
+    [Fact]
+    public void StartThreadCommand_StartsThread()
+    {
+        var context = new Dictionary<string, object>();
+        new InitProcessorContextCommand(context).Execute();
+
+        var queue = (BlockingCollection<ICommand>)context["queue"];
+
+        var started = new ManualResetEventSlim(false);
+        // Команда, по которой поток сигналит, что он стартовал
+        queue.Add(new ActionCommand(() => started.Set()));
+
+        new StartThreadCommand(context).Execute();
+
+        // Ожидание сигнала
+        Assert.True(started.Wait(5000));
+
+        // Завершаем поток
+        queue.Add(new ActionCommand(() => context["canContinue"] = false));
+        Assert.True(((Processor)context["processor"]).Wait(5000));
+    }
 }
