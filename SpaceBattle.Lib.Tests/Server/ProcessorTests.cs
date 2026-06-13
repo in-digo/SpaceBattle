@@ -16,14 +16,14 @@ public class ProcessorTests
 
         var cmd = new Mock<ICommand>();
         queue.Add(cmd.Object);
-        // команда-стоп: останавливает цикл, чтобы поток завершился и тест не повис
+        // Стоп-команда
         queue.Add(new ActionCommand(() => context["canContinue"] = false));
 
         var processor = new Processor(new Processable(context));
 
-        // поток успел завершиться в отведённое время
+        // Поток завершился за отведённое время
         Assert.True(processor.Wait(5000));
-        // команда из очереди была выполнена ровно один раз
+        // Команда из очереди была выполнена один раз
         cmd.Verify(c => c.Execute(), Times.Once());
     }
 }
