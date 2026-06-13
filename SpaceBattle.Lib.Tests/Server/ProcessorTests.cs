@@ -107,4 +107,30 @@ public class ProcessorTests
         // Команда после hard stop не выполнялась
         afterStop.Verify(c => c.Execute(), Times.Never());
     }
+
+    // SoftStopCommand останавливает цикл только после опустошения очереди
+    [Fact]
+    public void SoftStopCommand_StopsAfterQueueDrained()
+    {
+        var context = new Dictionary<string, object>();
+        new InitProcessorContextCommand(context).Execute();
+
+        var queue = (BlockingCollection<ICommand>)context["queue"];
+
+        var beforeStop = new Mock<ICommand>();
+        var afterStop = new Mock<ICommand>();
+
+        queue.Add(beforeStop.Object);
+        queue.Add(new SoftStopCommand(context));
+        queue.Add(afterStop.Object);   // Должна выполниться
+
+        new StartThreadCommand(context).Execute();
+
+        Assert.True(((Processor)context["processor"]).Wait(5000));
+        // Обе команды выполнены
+        beforeStop.Verify(c => c.Execute(), Times.Once());
+        afterStop.Verify(c => c.Execute(), Times.Once());
+        // Оередь пуста
+        Assert.Empty(queue);
+    }
 }
