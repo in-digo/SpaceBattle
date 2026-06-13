@@ -85,4 +85,26 @@ public class ProcessorTests
         queue.Add(new ActionCommand(() => context["canContinue"] = false));
         Assert.True(((Processor)context["processor"]).Wait(5000));
     }
+
+    // HardStopCommand немедленно обрывает цикл выполнения команд
+    [Fact]
+    public void HardStopCommand_StopsImmediately()
+    {
+        var context = new Dictionary<string, object>();
+        new InitProcessorContextCommand(context).Execute();
+
+        var queue = (BlockingCollection<ICommand>)context["queue"];
+
+        var afterStop = new Mock<ICommand>();
+
+        queue.Add(new HardStopCommand(context));
+        queue.Add(afterStop.Object);                                          // Не должна выполниться
+        queue.Add(new ActionCommand(() => context["canContinue"] = false));   // Страховка (поток завершится в любом случае)
+
+        new StartThreadCommand(context).Execute();
+
+        Assert.True(((Processor)context["processor"]).Wait(5000));
+        // Команда после hard stop не выполнялась
+        afterStop.Verify(c => c.Execute(), Times.Never());
+    }
 }
