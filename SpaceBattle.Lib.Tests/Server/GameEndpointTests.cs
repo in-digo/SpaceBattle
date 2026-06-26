@@ -3,11 +3,11 @@ using System.Text.Json;
 
 namespace SpaceBattle.Lib.Tests;
 
-public class EndpointTests : IDisposable
+public class GameEndpointTests : IDisposable
 {
     private readonly IDictionary<string, IDictionary<string, object>> _games;
 
-    public EndpointTests()
+    public GameEndpointTests()
     {
         new InitScopeBasedIoCCommand().Execute();
         IoC.Resolve<ICommand>(
@@ -17,14 +17,12 @@ public class EndpointTests : IDisposable
 
         _games = new Dictionary<string, IDictionary<string, object>>();
 
-        // Регистрируем хранилище игр
         IoC.Resolve<ICommand>(
             "IoC.Register",
             "Games.Storage",
             (Func<object[], object>)(_ => _games)
         ).Execute();
 
-        // Регистрируем десериализацию
         IoC.Resolve<ICommand>(
             "IoC.Register",
             "Message.Deserialize",
@@ -35,7 +33,6 @@ public class EndpointTests : IDisposable
             })
         ).Execute();
 
-        // Регистрируем создание InterpretCommand
         IoC.Resolve<ICommand>(
             "IoC.Register",
             "Message.Interpret",
@@ -47,7 +44,6 @@ public class EndpointTests : IDisposable
             })
         ).Execute();
 
-        // Регистрируем постановку в очередь
         IoC.Resolve<ICommand>(
             "IoC.Register",
             "Queue.Enqueue",
@@ -66,9 +62,9 @@ public class EndpointTests : IDisposable
         IoC.Resolve<ICommand>("Scopes.Current.Clear").Execute();
     }
 
-    // Endpoint десериализует сообщение, находит игру и ставит InterpretCommand в очередь игры
+    // Endpoint успешно обрабатывает сообщение и ставит InterpretCommand в очередь игры
     [Fact]
-    public void Endpoint_Receives_Message_And_Enqueues_InterpretCommand()
+    public void GameEndpoint_Receives_Message_And_Enqueues_To_Game_Queue()
     {
         // Arrange
         var json = @"{
@@ -84,9 +80,9 @@ public class EndpointTests : IDisposable
 
         _games["game-123"] = gameContext;
 
+        // Act - тот же вызов, что делает HTTP endpoint
+        var message = JsonSerializer.Deserialize<IncomingMessage>(json);
         var endpoint = new MessageEndpoint();
-
-        // Act
         endpoint.Handle(json);
 
         // Assert - команда попала в очередь игры
