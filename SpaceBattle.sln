@@ -9,6 +9,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpaceBattle.Lib.Tests", "Sp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpaceBattle.Server", "SpaceBattle.Server\SpaceBattle.Server.csproj", "{9AD968D7-BBBF-47D8-8064-3671F8842735}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpaceBattle.Auth.Server", "SpaceBattle.Auth.Server\SpaceBattle.Auth.Server.csproj", "{82D21EB2-B5CE-4DF7-9F38-96A9E0C4C4E6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpaceBattle.Auth.Tests", "SpaceBattle.Auth.Tests\SpaceBattle.Auth.Tests.csproj", "{2778A9CA-10E0-4990-BB4C-6FA502B9D634}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +34,13 @@ Global
 		{9AD968D7-BBBF-47D8-8064-3671F8842735}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9AD968D7-BBBF-47D8-8064-3671F8842735}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9AD968D7-BBBF-47D8-8064-3671F8842735}.Release|Any CPU.Build.0 = Release|Any CPU
+		{82D21EB2-B5CE-4DF7-9F38-96A9E0C4C4E6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{82D21EB2-B5CE-4DF7-9F38-96A9E0C4C4E6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{82D21EB2-B5CE-4DF7-9F38-96A9E0C4C4E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{82D21EB2-B5CE-4DF7-9F38-96A9E0C4C4E6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2778A9CA-10E0-4990-BB4C-6FA502B9D634}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2778A9CA-10E0-4990-BB4C-6FA502B9D634}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2778A9CA-10E0-4990-BB4C-6FA502B9D634}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2778A9CA-10E0-4990-BB4C-6FA502B9D634}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
