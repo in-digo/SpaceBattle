@@ -1,6 +1,7 @@
 using System.Text;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Options;
 
 namespace SpaceBattle.Auth.Server.Tokens;
 
@@ -10,10 +11,10 @@ public class JwtTokenService : ITokenService
     private readonly TimeProvider _timeProvider;
 
     public JwtTokenService(
-        JwtOptions options,
+        IOptions<JwtOptions> options,
         TimeProvider timeProvider)
     {
-        _options = options;
+        _options = options.Value;
         _timeProvider = timeProvider;
     }
 

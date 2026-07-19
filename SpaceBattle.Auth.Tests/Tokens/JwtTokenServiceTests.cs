@@ -2,6 +2,7 @@ using System.Text;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using SpaceBattle.Auth.Server.Tokens;
+using Microsoft.Extensions.Options;
 
 namespace SpaceBattle.Auth.Tests.Tokens;
 
@@ -43,7 +44,9 @@ public class JwtTokenServiceTests
         };
 
         var timeProvider = new FixedTimeProvider(currentTime);
-        var service = new JwtTokenService(options, timeProvider);
+        var service = new JwtTokenService(
+            Options.Create(options),
+            timeProvider);
 
         // Act
         var tokenResult = service.CreateToken(gameId, userId);
