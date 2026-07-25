@@ -1,17 +1,19 @@
 using System.Collections.Concurrent;
+using System.Threading;
 using Moq;
 
 namespace SpaceBattle.Lib.Tests;
 
 public class CommandRedirectionTests
 {
-    // Команда переносится из исходной очереди в целевую и выполняется потоком второго процессора
+    // MoveTo переносит команду в целевой поток, а Run возвращает последующую обработку в исходный поток
     [Fact]
-    public void Processors_RedirectCommandAndExecuteItInTargetThread()
+    public void Processors_RedirectCommandAndReturnExecutionToSourceThread()
     {
         using var sourceQueue = new BlockingCollection<ICommand>();
         using var targetQueue = new BlockingCollection<ICommand>();
-        using var targetCommandExecuted = new ManualResetEventSlim();
+        using var redirectedCommandExecuted = new ManualResetEventSlim();
+        using var commandAfterRunExecuted = new ManualResetEventSlim();
 
         var sourceContext = new Dictionary<string, object>
         {
@@ -24,7 +26,8 @@ public class CommandRedirectionTests
         };
 
         var sourceThreadId = 0;
-        var executionThreadId = 0;
+        var redirectedCommandThreadId = 0;
+        var commandAfterRunThreadId = 0;
 
         var sourceThreadMarker = new Mock<ICommand>(MockBehavior.Strict);
         sourceThreadMarker
@@ -36,8 +39,17 @@ public class CommandRedirectionTests
             .Setup(command => command.Execute())
             .Callback(() =>
             {
-                executionThreadId = Environment.CurrentManagedThreadId;
-                targetCommandExecuted.Set();
+                redirectedCommandThreadId = Environment.CurrentManagedThreadId;
+                redirectedCommandExecuted.Set();
+            });
+
+        var commandAfterRun = new Mock<ICommand>(MockBehavior.Strict);
+        commandAfterRun
+            .Setup(command => command.Execute())
+            .Callback(() =>
+            {
+                commandAfterRunThreadId = Environment.CurrentManagedThreadId;
+                commandAfterRunExecuted.Set();
             });
 
         var sourceNormalState = new NormalState(sourceQueue);
@@ -49,12 +61,12 @@ public class CommandRedirectionTests
         sourceQueue.Add(new MoveToCommand(moveToState));
         sourceQueue.Add(redirectedCommand.Object);
         sourceQueue.Add(new RunCommand(sourceNormalState));
+        sourceQueue.Add(commandAfterRun.Object);
         sourceQueue.Add(new HardStopCommand(sourceContext));
 
         Exception? sourceTerminationException = null;
         Exception? targetTerminationException = null;
 
-        // Запускаем целевой процессор: он будет ждать команду в targetQueue
         var targetProcessor = new Processor(
             new StateMachineProcessable(
                 targetNormalState,
@@ -65,25 +77,38 @@ public class CommandRedirectionTests
                 sourceNormalState,
                 exception => sourceTerminationException = exception));
 
-        var wasExecuted =
-            targetCommandExecuted.Wait(5000);
+        var wasRedirectedCommandExecuted = redirectedCommandExecuted.Wait(5000);
+        var wasCommandAfterRunExecuted = commandAfterRunExecuted.Wait(5000);
 
-        // Целевой процессор останавливаем после того, как он обработал перенаправленную команду
         targetQueue.Add(new HardStopCommand(targetContext));
 
         Assert.True(sourceProcessor.Wait(5000));
         Assert.True(targetProcessor.Wait(5000));
 
-        Assert.True(wasExecuted);
+        Assert.True(wasRedirectedCommandExecuted);
+        Assert.True(wasCommandAfterRunExecuted);
+
         Assert.NotEqual(0, sourceThreadId);
-        Assert.NotEqual(0, executionThreadId);
-        Assert.NotEqual(sourceThreadId, executionThreadId);
+        Assert.NotEqual(0, redirectedCommandThreadId);
+        Assert.NotEqual(0, commandAfterRunThreadId);
+
+        Assert.NotEqual(
+            sourceThreadId,
+            redirectedCommandThreadId);
+
+        Assert.Equal(
+            sourceThreadId,
+            commandAfterRunThreadId);
 
         sourceThreadMarker.Verify(
             command => command.Execute(),
             Times.Once());
 
         redirectedCommand.Verify(
+            command => command.Execute(),
+            Times.Once());
+
+        commandAfterRun.Verify(
             command => command.Execute(),
             Times.Once());
 
