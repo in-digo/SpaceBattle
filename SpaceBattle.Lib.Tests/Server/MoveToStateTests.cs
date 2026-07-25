@@ -89,4 +89,30 @@ public class MoveToStateTests
         Assert.Same(normalState, nextState);
         Assert.False(targetQueue.TryTake(out _));
     }
+
+    // HardStopCommand останавливает обработку даже в режиме перенаправления и не попадает в целевую очередь
+    [Fact]
+    public void Handle_HardStopCommand_StopsProcessingWithoutRedirecting()
+    {
+        var context = new Dictionary<string, object>
+        {
+            ["canContinue"] = true
+        };
+
+        using var sourceQueue = new BlockingCollection<ICommand>();
+        using var targetQueue = new BlockingCollection<ICommand>();
+
+        sourceQueue.Add(new HardStopCommand(context));
+        sourceQueue.CompleteAdding();
+
+        var state = new MoveToState(
+            sourceQueue,
+            targetQueue);
+
+        var nextState = state.Handle();
+
+        Assert.Null(nextState);
+        Assert.False((bool)context["canContinue"]);
+        Assert.False(targetQueue.TryTake(out _));
+    }
 }
