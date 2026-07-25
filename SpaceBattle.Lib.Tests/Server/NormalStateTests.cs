@@ -23,4 +23,26 @@ public class NormalStateTests
         Assert.Same(state, nextState);
         command.Verify(cmd => cmd.Execute(), Times.Once());
     }
+
+    // MoveToCommand переводит процессор из обычного режима в заранее созданное состояние перенаправления
+    [Fact]
+    public void Handle_MoveToCommand_SwitchesToMoveToState()
+    {
+        using var sourceQueue = new BlockingCollection<ICommand>();
+        using var targetQueue = new BlockingCollection<ICommand>();
+
+        var moveToState = new MoveToState(
+            sourceQueue,
+            targetQueue);
+
+        sourceQueue.Add(new MoveToCommand(moveToState));
+        sourceQueue.CompleteAdding();
+
+        var normalState = new NormalState(sourceQueue);
+
+        var nextState = normalState.Handle();
+
+        Assert.Same(moveToState, nextState);
+        Assert.False(targetQueue.TryTake(out _));
+    }
 }
