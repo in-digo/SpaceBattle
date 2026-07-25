@@ -21,8 +21,14 @@ public class MoveToState : ICommandProcessingState
     public ICommandProcessingState? Handle()
     {
         var command = _sourceQueue.Take();
-        _targetQueue.Add(command);
 
+        if (command is IStateTransitionCommand transitionCommand)
+        {
+            transitionCommand.Execute();
+            return transitionCommand.NextState;
+        }
+
+        _targetQueue.Add(command);
         return this;
     }
 }

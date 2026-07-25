@@ -30,4 +30,41 @@ public class MoveToStateTests
             cmd => cmd.Execute(),
             Times.Never());
     }
+
+    // Команда перехода выполняется в исходном состоянии, не перенаправляется и определяет следующее состояние автомата
+    [Fact]
+    public void Handle_ExecutesTransitionCommandAndReturnsItsNextStateWithoutRedirecting()
+    {
+        var nextState = new Mock<ICommandProcessingState>(MockBehavior.Strict);
+
+        var transitionCommand = new Mock<IStateTransitionCommand>(MockBehavior.Strict);
+
+        transitionCommand
+            .Setup(command => command.Execute());
+
+        transitionCommand
+            .SetupGet(command => command.NextState)
+            .Returns(nextState.Object);
+
+        using var sourceQueue = new BlockingCollection<ICommand>();
+        using var targetQueue = new BlockingCollection<ICommand>();
+
+        sourceQueue.Add(transitionCommand.Object);
+        sourceQueue.CompleteAdding();
+
+        var state = new MoveToState(sourceQueue, targetQueue);
+
+        var actualNextState = state.Handle();
+
+        Assert.Same(nextState.Object, actualNextState);
+        Assert.False(targetQueue.TryTake(out _));
+
+        transitionCommand.Verify(
+            command => command.Execute(),
+            Times.Once());
+
+        transitionCommand.VerifyGet(
+            command => command.NextState,
+            Times.Once());
+    }
 }
