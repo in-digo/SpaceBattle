@@ -14,10 +14,8 @@
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.12" />
     <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.19.2" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
-    <PackageReference Include="Moq" Version="4.20.72" />
     <PackageReference Include="xunit" Version="2.5.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
-    <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
   <ItemGroup>
@@ -25,8 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SpaceBattle.Lib\SpaceBattle.Lib.csproj" />
-    <ProjectReference Include="..\SpaceBattle.Server\SpaceBattle.Server.csproj" />
+    <ProjectReference Include="..\SpaceBattle.Auth.Server\SpaceBattle.Auth.Server.csproj" />
   </ItemGroup>
 
 </Project>

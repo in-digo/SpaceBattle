@@ -1,6 +1,6 @@
 namespace SpaceBattle.Lib;
 
-public class MessageEndpoint
+public class MessageEndpoint : IMessageEndpoint
 {
     // Принимает JSON, десериализует, маршрутизирует по gameId, ставит InterpretCommand в очередь игры
     public void Handle(string json)
