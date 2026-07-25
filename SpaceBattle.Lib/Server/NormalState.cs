@@ -18,6 +18,8 @@ public class NormalState : ICommandProcessingState
         var command = _queue.Take();
         command.Execute();
 
-        return this;
+        return command is IStateTransitionCommand transitionCommand
+            ? transitionCommand.NextState
+            : this;
     }
 }

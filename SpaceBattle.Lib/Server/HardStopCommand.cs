@@ -1,13 +1,15 @@
 namespace SpaceBattle.Lib;
 
-public class HardStopCommand : ICommand
+public class HardStopCommand  : IStateTransitionCommand
 {
-    IDictionary<string, object> _context;
+    private readonly IDictionary<string, object> _context;
 
     public HardStopCommand(IDictionary<string, object> context)
     {
         _context = context;
     }
+
+    public ICommandProcessingState? NextState => null;
 
     public void Execute()
     {
