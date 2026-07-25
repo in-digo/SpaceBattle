@@ -67,4 +67,26 @@ public class MoveToStateTests
             command => command.NextState,
             Times.Once());
     }
+
+    // RunCommand возвращает процессор из режима перенаправления в обычный режим обработки исходной очереди
+    [Fact]
+    public void Handle_RunCommand_SwitchesBackToNormalState()
+    {
+        using var sourceQueue = new BlockingCollection<ICommand>();
+        using var targetQueue = new BlockingCollection<ICommand>();
+
+        var normalState = new NormalState(sourceQueue);
+
+        sourceQueue.Add(new RunCommand(normalState));
+        sourceQueue.CompleteAdding();
+
+        var moveToState = new MoveToState(
+            sourceQueue,
+            targetQueue);
+
+        var nextState = moveToState.Handle();
+
+        Assert.Same(normalState, nextState);
+        Assert.False(targetQueue.TryTake(out _));
+    }
 }
