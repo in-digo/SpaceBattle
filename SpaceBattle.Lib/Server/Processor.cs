@@ -2,8 +2,8 @@ namespace SpaceBattle.Lib;
 
 public class Processor
 {
-    Thread _thread;
-    IProcessable _processable;
+    private readonly Thread _thread;
+    private readonly IProcessable _processable;
 
     public Processor(IProcessable processable)
     {
