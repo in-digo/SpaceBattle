@@ -307,4 +307,77 @@ public class UpdateNeighborhoodCommandTests
             command => command.Execute(),
             Times.Exactly(3));
     }
+
+    // Для каждого другого объекта окрестности создаётся и выполняется отдельная команда проверки коллизии
+    [Fact]
+    public void Execute_NeighborhoodContainsSeveralObjects_CreatesAndExecutesCollisionCommandsForEachObject()
+    {
+        var gameObject = new Mock<IUObject>(MockBehavior.Strict);
+        var firstOtherObject = new Mock<IUObject>(MockBehavior.Strict);
+        var secondOtherObject = new Mock<IUObject>(MockBehavior.Strict);
+
+        var neighborhoodSystem = new Mock<INeighborhoodSystem>(MockBehavior.Strict);
+
+        var collisionCommandFactory = new Mock<ICollisionCommandFactory>(MockBehavior.Strict);
+
+        var firstCollisionCommand = new Mock<ICommand>(MockBehavior.Strict);
+        var secondCollisionCommand = new Mock<ICommand>(MockBehavior.Strict);
+
+        var nextCommand = new Mock<ICommand>(MockBehavior.Strict);
+
+        var neighborhood = new Neighborhood();
+        neighborhood.Objects.Add(firstOtherObject.Object);
+        neighborhood.Objects.Add(secondOtherObject.Object);
+
+        neighborhoodSystem
+            .Setup(system => system.GetNeighborhood(gameObject.Object))
+            .Returns(neighborhood);
+
+        collisionCommandFactory
+            .Setup(factory => factory.Create(gameObject.Object, firstOtherObject.Object))
+            .Returns(firstCollisionCommand.Object);
+
+        collisionCommandFactory
+            .Setup(factory => factory.Create(gameObject.Object, secondOtherObject.Object))
+            .Returns(secondCollisionCommand.Object);
+
+        firstCollisionCommand.Setup(command => command.Execute());
+        secondCollisionCommand.Setup(command => command.Execute());
+
+        nextCommand.Setup(command => command.Execute());
+
+        var command = new UpdateNeighborhoodCommand(
+            gameObject.Object,
+            neighborhoodSystem.Object,
+            collisionCommandFactory.Object,
+            nextCommand.Object);
+
+        // Первый запуск создаёт макрокоманду, второй выполняет её в той же окрестности
+        command.Execute();
+        command.Execute();
+
+        collisionCommandFactory.Verify(
+            factory => factory.Create(gameObject.Object, firstOtherObject.Object),
+            Times.Once);
+
+        collisionCommandFactory.Verify(
+            factory => factory.Create(gameObject.Object, secondOtherObject.Object),
+            Times.Once);
+
+        firstCollisionCommand.Verify(
+            collisionCommand => collisionCommand.Execute(),
+            Times.Once);
+
+        secondCollisionCommand.Verify(
+            collisionCommand => collisionCommand.Execute(),
+            Times.Once);
+
+        neighborhoodSystem.Verify(
+            system => system.GetNeighborhood(gameObject.Object),
+            Times.Exactly(2));
+
+        nextCommand.Verify(
+            next => next.Execute(),
+            Times.Exactly(2));
+    }
 }
